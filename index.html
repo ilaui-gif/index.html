@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Python Editor mit CodeMirror 5 und Skulpt</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material-darker.min.css" />
+
+<style>
+  body {
+    background: #282c34;
+    color: #abb2bf;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1, h2 {
+    text-align: center;
+  }
+  .CodeMirror {
+    height: 350px;
+    border-radius: 5px;
+    font-size: 16px;
+    border: 1px solid #444;
+  }
+  button {
+    display: block;
+    margin: 15px auto;
+    padding: 10px 30px;
+    background-color: #61afef;
+    border: none;
+    color: #282c34;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #528ecc;
+  }
+  #output {
+    margin-top: 20px;
+    background-color: #21252b;
+    border: 1px solid #444;
+    padding: 15px;
+    min-height: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    border-radius: 5px;
+    font-family: monospace;
+    color: #abb2bf;
+  }
+  #output.error {
+    color: #ff6c6b;
+    font-weight: bold;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+
+</head>
+<body>
+
+<h1>Kostenloser WebPython Editor</h1>
+
+<textarea id="code" name="code">print("Hallo Welt!")</textarea>
+
+<button onclick="runPython()">Code ausführen</button>
+
+<h2>Ausgabe:</h2>
+<pre id="output"></pre>
+
+<script>
+  const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+    mode: "python",
+    theme: "material-darker",
+    lineNumbers: true,
+    autoCloseBrackets: true,
+    indentUnit: 4,
+    tabSize: 4,
+  });
+
+  function outf(text) {
+    const output = document.getElementById("output");
+    output.textContent += text;
+  }
+
+  function builtinRead(x) {
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+      throw "Datei nicht gefunden: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
+  }
+
+  function runPython() {
+    const output = document.getElementById("output");
+    output.textContent = '';
+    output.classList.remove('error');
+
+    Sk.configure({ output: outf, read: builtinRead });
+    let code = editor.getValue();
+
+    Sk.misceval.asyncToPromise(() => Sk.importMainWithBody("<stdin>", false, code, true))
+      .then(() => {
+        console.log("Ausführung beendet");
+      })
+      .catch(err => {
+        output.textContent += "\nFehler:\n" + err.toString();
+        output.classList.add('error');
+      });
+  }
+</script>
+
+</body>
+</html>
